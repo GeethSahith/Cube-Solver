@@ -2,7 +2,7 @@
 
 import sys
 from solver.cube import Cube
-from solver.solver import CFOPSolver
+from solver.solve import CFOPSolver
 from solver.utils import parse_scramble, pretty_print_alg
 
 if __name__ == '__main__':

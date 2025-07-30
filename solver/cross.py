@@ -1,156 +1,125 @@
-# cross.py
-from cube import Cube
-from typing import List
-from random import choice
+from typing import Optional
+from .base import Cube, Movement, Color, realign_cube
 
-WHITE = 0
 
-# When the white edge is in UF (0,2,1), dropping into D uses:
-INSERT_MOVES = {
-    2: ['F2'],  # Front  → drop F→D
-    1: ['R2'],  # Right
-    5: ['B2'],  # Back
-    4: ['L2'],  # Left
-}
+def check_cross_solved(cube: Cube):
+    bottom_color = cube.bottom.center
+    # Check that the cross is present on the bottom face
+    if not all(c == bottom_color for c in cube.bottom.middle_row):
+        return False
+    if not all(c == bottom_color for c in cube.bottom.middle_col):
+        return False
 
-# The four U‑edge slots and which side they belong to
-U_FACE_EDGES = {
-    (0,2,1): 2,   # UF → Front
-    (0,1,2): 1,   # UR → Right
-    (0,0,1): 5,   # UB → Back
-    (0,1,0): 4,   # UL → Left
-}
+    # Check that all the side faces have the cross pieces lined up
+    side_faces = [cube.front, cube.right, cube.back, cube.left]
+    return all(face.bottom_middle == face.center for face in side_faces)
 
-# All 12 edge‑positions on a cube
-ALL_EDGES = [
-    # U layer
-    (0,0,1), (0,1,2), (0,2,1), (0,1,0),
-    # D layer
-    (3,0,1), (3,1,2), (3,2,1), (3,1,0),
-    # F layer
-    (2,0,1), (2,1,2), (2,2,1), (2,1,0),
-    # R layer
-    (1,0,1), (1,1,2), (1,2,1), (1,1,0),
-    # B layer
-    (5,0,1), (5,1,2), (5,2,1), (5,1,0),
-    # L layer
-    (4,0,1), (4,1,2), (4,2,1), (4,1,0),
-]
 
-def bring_edge_to_U(cube: Cube, f:int, r:int, c:int, sol:List[str]):
+def multi_down(cube: Cube, num_iterations: int):
+    num_iterations %= 4
+    for _ in range(num_iterations):
+        cube.run_movement(Movement.DOWN)
+
+
+def multi_down_prime(cube: Cube, num_iterations: int):
+    # A down prime is just a down 3 times.
+    num_iterations *= 3
+    num_iterations %= 4
+    for _ in range(num_iterations):
+        cube.run_movement(Movement.DOWN)
+
+
+def check_cross_case_solved(cube: Cube, side_color: Color):
+    bottom_color = cube.bottom.center
+    if cube.front.center == side_color:
+        return cube.front.bottom_middle == side_color and cube.bottom.top_middle == bottom_color
+    if cube.right.center == side_color:
+        return cube.right.bottom_middle == side_color and cube.bottom.middle_right == bottom_color
+    if cube.back.center == side_color:
+        return cube.back.bottom_middle == side_color and cube.bottom.bottom_middle == bottom_color
+    if cube.left.center == side_color:
+        return cube.left.bottom_middle == side_color and cube.bottom.middle_left == bottom_color
+    return False
+
+
+def detect_and_solve_cross_case(cube: Cube, target_side_color: Optional[Color] = None):
     """
-    Hard-coded moves to bring the edge at (f,r,c) so that its white sticker
-    ends up in the UF location (0,2,1).
+    If target_side_color is provided, then only solve the case if the complmenting color is the side color.
+    6 cases:
+        1. piece is on the top side
+        2. piece is on the top edge
+        3. piece is on the left edge
+        4. piece is on the right edge
+        5. piece is on the bottom edge
+        6. piece is on the bottom but in the wrong spot
     """
-    # 1) If it’s already in UF, nothing to do
-    if (f,r,c)==(0,2,1):
-        return
+    bottom_color = cube.bottom.center
+    num_downs_to_front = {
+        cube.front.center: 0,
+        cube.left.center: 1,
+        cube.back.center: 2,
+        cube.right.center: 3,
+    }
 
-    # D layer → double‐turn
-    if f==3:
-        if (r,c)==(0,1): mv='F2'
-        elif (r,c)==(1,2): mv='R2'
-        elif (r,c)==(2,1): mv='B2'
-        elif (r,c)==(1,0): mv='L2'
-        else: return
-        cube.apply_alg(mv); sol.append(mv)
-        return
-
-    # F layer
-    if f==2:
-        if (r,c)==(0,1): mv="F"
-        elif (r,c)==(2,1): mv="F'"
-        elif (r,c)==(1,2): mv="U'"
-        elif (r,c)==(1,0): mv="U"
-        else: return
-        cube.apply_alg(mv); sol.append(mv)
-        return
-
-    # R layer
-    if f==1:
-        if (r,c)==(0,1): mv="R"
-        elif (r,c)==(2,1): mv="R'"
-        elif (r,c)==(1,2): mv="U'"
-        elif (r,c)==(1,0): mv="U"
-        else: return
-        cube.apply_alg(mv); sol.append(mv)
-        return
-
-    # B layer
-    if f==5:
-        if (r,c)==(0,1): mv="B"
-        elif (r,c)==(2,1): mv="B'"
-        elif (r,c)==(1,2): mv="U'"
-        elif (r,c)==(1,0): mv="U"
-        else: return
-        cube.apply_alg(mv); sol.append(mv)
-        return
-
-    # L layer
-    if f==4:
-        if (r,c)==(0,1): mv="L'"
-        elif (r,c)==(2,1): mv="L"
-        elif (r,c)==(1,2): mv="U'"
-        elif (r,c)==(1,0): mv="U"
-        else: return
-        cube.apply_alg(mv); sol.append(mv)
-        return
-
-def rotate_U_to_match(cube:Cube, side_face:int, sol:List[str]):
-    """
-    With the white sticker now at UF=(0,2,1), spin U until
-    the second-color of that edge matches side_face's center.
-    """
-    target = cube.faces[side_face][1][1]
-    for _ in range(4):
-        if cube.faces[0][2][1]==WHITE and cube.faces[side_face][0][1]==target:
-            return
-        cube.apply_alg("U"); sol.append("U")
-
-def solve_cross(cube: Cube) -> List[str]:
-    sol: List[str] = []
-    # 1) locate *every* white-edge
-    for f,r,c in ALL_EDGES:
-        if cube.faces[f][r][c] != WHITE:
-            continue
-
-        # 2) bring that white up into UF
-        bring_edge_to_U(cube, f, r, c, sol)
-
-        # 3) detect which side it's now paired with
-        for (u_pos, side) in U_FACE_EDGES.items():
-            if cube.faces[u_pos[0]][u_pos[1]][u_pos[2]]==WHITE:
-                # 4) spin U to align
-                rotate_U_to_match(cube, side, sol)
-                # 5) drop it down
-                mv = INSERT_MOVES[side]
-                cube.apply_alg(" ".join(mv))
-                sol += mv
-                break
-
-    return sol
-
-def check_cross(cube:Cube)->bool:
-    # all four edges should now be on D and aligned
-    for (u_pos, side) in U_FACE_EDGES.items():
-        # after F2/R2/etc the white is gone from U
-        if cube.faces[u_pos[0]][u_pos[1]][u_pos[2]]==WHITE:
-            return False
-        # and that side center still matches its facelet
-        if cube.faces[side][0][1]!=cube.faces[side][1][1]:
-            return False
-    return True
-
-if __name__=="__main__":
-    cube = Cube()
-    moves = ["U","U'","U2","D","D'","D2",
-             "F","F'","F2","B","B'","B2",
-             "L","L'","L2","R","R'","R2"]
-    scr = " ".join(choice(moves) for _ in range(20))
-    print("Scramble:", scr)
-    cube.apply_alg(scr)
-    print("Before cross:", cube.is_solved())
-    sol = solve_cross(cube)
-    print("Cross moves:", sol)
-    print("Cross OK?", check_cross(cube))
-    cube.print_cube()
+    # Case 1: Piece is on the top side
+    if cube.top.bottom_middle == bottom_color:
+        complement_color = cube.front.top_middle
+        if target_side_color is None or complement_color == target_side_color:
+            # We want to insert it at the front
+            num_downs = num_downs_to_front[complement_color]
+            multi_down(cube, num_downs)
+            cube.run_algorithm("F2")
+            multi_down_prime(cube, num_downs)
+            return True
+    # Case 2: Piece is on the top edge
+    if cube.front.top_middle == bottom_color:
+        complement_color = cube.top.bottom_middle
+        if target_side_color is None or complement_color == target_side_color:
+            num_downs = num_downs_to_front[complement_color]
+            multi_down(cube, num_downs)
+            cube.run_algorithm("F D R' D'")
+            multi_down_prime(cube, num_downs)
+            return True
+    # Case 3: Piece is on the left edge
+    if cube.front.middle_left == bottom_color:
+        complement_color = cube.left.middle_right
+        if target_side_color is None or complement_color == target_side_color:
+            # We want to insert it on our left
+            num_downs = num_downs_to_front[complement_color] - 1
+            multi_down(cube, num_downs)
+            cube.run_algorithm("L")
+            multi_down_prime(cube, num_downs)
+            return True
+    # Case 4: Piece is on the right edge
+    if cube.front.middle_right == bottom_color:
+        complement_color = cube.right.middle_left
+        if target_side_color is None or complement_color == target_side_color:
+            # We want to insert it on our right
+            num_downs = num_downs_to_front[complement_color] + 1
+            multi_down(cube, num_downs)
+            cube.run_algorithm("R'")
+            multi_down_prime(cube, num_downs)
+            return True
+    # Case 5: Piece is on the bottom edge
+    if cube.front.bottom_middle == bottom_color:
+        complement_color = cube.bottom.top_middle
+        if target_side_color is None or complement_color == target_side_color:
+            # Bring the piece to the right edge, and then run the regular right edge stuff.
+            cube.run_algorithm("F'")
+            num_downs = num_downs_to_front[complement_color] + 1
+            multi_down(cube, num_downs)
+            cube.run_algorithm("R'")
+            multi_down_prime(cube, num_downs)
+            return True
+    # Case 6: Piece is on the bottom side but wrong position
+    if cube.bottom.top_middle == bottom_color and cube.front.bottom_middle != cube.front.center:
+        complement_color = cube.front.bottom_middle
+        if target_side_color is None or complement_color == target_side_color:
+            # Bring the piece to the right edge, and then run the regular right edge stuff.
+            cube.run_algorithm("D R D'")
+            num_downs = num_downs_to_front[complement_color] + 1
+            multi_down(cube, num_downs)
+            cube.run_algorithm("R'")
+            multi_down_prime(cube, num_downs)
+            return True
+    return False
