@@ -5,15 +5,12 @@ from solver.f2l import check_f2l_solved
 from solver.oll import check_oll_solved
 from solver.solve import solve_cross, solve_f2l, solve_oll, solve_pll, check_cube_solved
 
-# --- Test Configuration ---
 NUM_SCRAMBLE_TESTS = 50
 NUM_CROSS_TESTS = 100
 NUM_F2L_TESTS = 100
 NUM_OLL_TESTS = 100
 NUM_PLL_TESTS = 100
-NUM_FULL_SOLVE_TESTS = 50 # A full end-to-end test
-
-# --- New Tests ---
+NUM_FULL_SOLVE_TESTS = 50
 
 @pytest.mark.parametrize("run", range(NUM_SCRAMBLE_TESTS))
 def test_scramble(run):
@@ -45,8 +42,6 @@ def test_full_solve(run):
         assert check_cube_solved(cube)
     except Exception as e:
         raise Exception(f"Exception on full solve: {e}\nFailed on initial scramble: {cube_string}")
-
-# --- Refactored Original Tests ---
 
 @pytest.mark.parametrize("run", range(NUM_CROSS_TESTS))
 def test_cross(run):
@@ -99,6 +94,5 @@ def test_pll(run):
         raise Exception(f"Exception on PLL solve: {e}\nFailed on cube: {cube_string}")
 
 if __name__ == '__main__':
-    # This allows running the tests directly with `python test_solver.py`
     print("Running solver tests with pytest...")
     pytest.main(['-v', __file__])
