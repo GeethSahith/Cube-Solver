@@ -322,9 +322,6 @@ class Cube:
                 self.left.bottom_row,
             ) = cycled_bottom_rows
         elif movement == Movement.RIGHT:
-            # Right face rotates CW, right col moves F -> U -> B -> D -> F
-            # The RIGHT rotation involves the front, top, and bottom faces's right col, and the back face's left col.
-            #   Also, the back face's left col is in reverse.
             self.right.rotate_clockwise()
             cols = [
                 self.front.right_col,
@@ -338,9 +335,6 @@ class Cube:
             self.back.left_col = cycled_cols[2][::-1]
             self.bottom.right_col = cycled_cols[3][::-1]
         elif movement == Movement.LEFT:
-            # Left face rotates CW, left col moves F -> D -> B -> U -> F
-            # The LEFT rotation involves the front, top, and bottom faces's left col, and the back face's right col.
-            #   Also, the back face's right col is in reverse.
             self.left.rotate_clockwise()
             cols = [
                 self.front.left_col,
@@ -354,8 +348,6 @@ class Cube:
             self.back.right_col = cycled_cols[2][::-1]
             self.top.left_col = cycled_cols[3][::-1]
         elif movement == Movement.FRONT:
-            # Front face rotates CW, goes from left face's right col -> top face's bottom row -> right face's left col -> bottom face's top row -> left face's right col.
-            # The left face's right col and the bottom face's top row are reversed in comparison to the right face's left col and the top face's bottom row.
             self.front.rotate_clockwise()
             cols_and_rows = [
                 self.left.right_col,
@@ -369,8 +361,6 @@ class Cube:
             self.right.left_col = cycled_cols_and_rows[2]
             self.bottom.top_row = cycled_cols_and_rows[3][::-1]
         elif movement == Movement.BACK:
-            # Back face rotates CW, goes from left face's left col -> bottom face's bottom row -> right face's right col -> top face's top row -> left face's left col.
-            # The left face's right col and the bottom face's top row are reversed in comparison to the right face's left col and the top face's bottom row.
             self.back.rotate_clockwise()
             cols_and_rows = [
                 self.left.left_col,

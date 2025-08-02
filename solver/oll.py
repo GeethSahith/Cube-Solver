@@ -3,7 +3,7 @@ from typing import List
 from enum import Enum, auto
 from .base import Cube, Movement
 
-# Only Corner Stuff
+# Only Corner Stuff is here
 
 def alg1(cube: Cube):
   cube.run_algorithm("(R U2) (R2 F R F') U2 (R' F R F')")

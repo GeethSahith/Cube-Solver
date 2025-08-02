@@ -1,6 +1,6 @@
 from .base import Cube, Color, Movement, realign_cube
 
-## Section 1 - Basic cases.
+## Section 1 - Here I took Basic cases.
 
 # Corner on top, Edge on top -- Section 1A
 

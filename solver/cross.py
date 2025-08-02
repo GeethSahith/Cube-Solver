@@ -4,13 +4,13 @@ from .base import Cube, Movement, Color, realign_cube
 
 def check_cross_solved(cube: Cube):
     bottom_color = cube.bottom.center
-    # Check that the cross is present on the bottom face
+    # Checks that the cross is present on the bottom face
     if not all(c == bottom_color for c in cube.bottom.middle_row):
         return False
     if not all(c == bottom_color for c in cube.bottom.middle_col):
         return False
 
-    # Check that all the side faces have the cross pieces lined up
+    # Checks that all the side faces have the cross pieces lined up
     side_faces = [cube.front, cube.right, cube.back, cube.left]
     return all(face.bottom_middle == face.center for face in side_faces)
 

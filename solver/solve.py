@@ -7,14 +7,14 @@ from .f2l import detect_and_solve_f2l_case, check_f2l_case_solved, check_f2l_sol
 from .oll import detect_and_run_oll_case, check_oll_solved
 from .pll import detect_and_run_pll_case
 
-
+# Here I checked if the cube is solved
 def check_cube_solved(cube: Cube):
    return all(face.is_solved() for face in [cube.front, cube.back, cube.left, cube.right, cube.top, cube.bottom])
 
 
 def solve_cross_given_permutation(cube: Cube, permutation: Iterable[Color]):
-    # Try solving in the orders of each permutations, and pick the one that solves it with the fewest moves.
-    # Check if any of the cross orientations will match. Rotate the cube in all directions.
+    # Tried solving in the orders of each permutations, and pick the one that solves it with the fewest moves.
+    # Checked if any of the cross orientations will match. Rotateed the cube in all directions.
     for color in permutation:
         if check_cross_case_solved(cube, color):
             continue
@@ -25,10 +25,9 @@ def solve_cross_given_permutation(cube: Cube, permutation: Iterable[Color]):
 
 
 def solve_cross(cube: Cube, minimize_moves=True):
-    # Find all the side center pieces, and all permutations of that list.
+    # found all the side center pieces, and all permutations of that list.
     side_colors = [cube.front.center, cube.right.center, cube.back.center, cube.left.center]
 
-    # If we want to minimize the number of moves to solve cross, try every permutation. Otherwise, just use the default permutation.
     if minimize_moves:
         side_permutations = list(itertools.permutations(side_colors))
     else:
@@ -37,7 +36,7 @@ def solve_cross(cube: Cube, minimize_moves=True):
     fewest_turns = float("inf")
     fewest_turn_permutation = side_permutations[0]
 
-    # Solve the cross with each permutation, and count how many turns it takes to solve the cube.
+    # Solved the cross with each permutation, and count how many turns it takes to solve the cube.
     for permutation in side_permutations:
         cube_copy = cube.copy()
         cube_copy.reset_history()
@@ -47,15 +46,15 @@ def solve_cross(cube: Cube, minimize_moves=True):
             fewest_turns = num_turns
             fewest_turn_permutation = permutation
 
-    # Apply the best permutation.
+    # Applied the best permutation.
     solve_cross_given_permutation(cube, fewest_turn_permutation)
-    # Run this to undo any rotations, ensuring that cross is on the bottom.
+    # This is to undo the rotations
     cube.remove_cube_rotations_from_move_history()
 
 
 def solve_f2l_given_permutation(cube: Cube, permutation: Iterable[Color]):    
-    # Try solving in the orders of each permutations, and pick the one that solves it with the fewest moves.
-    # Check if any of the cross orientations will match. Rotate the cube in all directions.
+    # Tried solving in the orders of each permutations, and pick the one that solves it with the fewest moves.
+    # Checked if any of the cross orientations will match. Rotate the cube in all directions.
     for color in permutation:
         detect_and_solve_f2l_case(cube, color)
         assert check_f2l_case_solved(cube, color)
@@ -65,10 +64,9 @@ def solve_f2l(cube: Cube, minimize_moves=True):
     if not check_cross_solved(cube):
       raise ValueError("Cross must be solved before attempting to solve F2L")
 
-    # Find all the side center pieces, and all permutations of that list.
+    # Found all the side center pieces, and all permutations of that list.
     side_colors = [cube.front.center, cube.right.center, cube.back.center, cube.left.center]
 
-    # If we want to minimize the number of moves to solve cross, try every permutation. Otherwise, just use the default permutation.
     if minimize_moves:
         side_permutations = list(itertools.permutations(side_colors))
     else:
@@ -77,7 +75,6 @@ def solve_f2l(cube: Cube, minimize_moves=True):
     fewest_turns = float("inf")
     fewest_turn_permutation = side_permutations[0]
 
-    # Solve the cross with each permutation, and count how many turns it takes to solve the cube.
     for permutation in side_permutations:
         cube_copy = cube.copy()
         cube_copy.reset_history()
@@ -87,7 +84,7 @@ def solve_f2l(cube: Cube, minimize_moves=True):
             fewest_turns = num_turns
             fewest_turn_permutation = permutation
 
-    # Apply the best permutation.
+    # Applied the best permutation.
     solve_f2l_given_permutation(cube, fewest_turn_permutation)
     # Run this to undo any rotations, ensuring that cross is on the bottom.
     cube.remove_cube_rotations_from_move_history()
@@ -100,10 +97,9 @@ def solve_oll(cube: Cube):
     if not check_f2l_solved(cube):
         raise ValueError("F2L must be solved before attempting to solve OLL")
 
-    # Check if any of the OLL orientations will match. Rotate the cube in all directions.
+    # Checked if any of the OLL orientations will match. Rotate the cube in all directions.
     for _ in range(4):
         if detect_and_run_oll_case(cube):
-            # Run this to undo any rotations, ensuring that cross is on the bottom.
             cube.remove_cube_rotations_from_move_history()
             return
         cube.run_movement(Movement.YAW_CUBE_CW)
@@ -120,12 +116,9 @@ def solve_pll(cube: Cube):
 
     if not check_oll_solved(cube):
         raise ValueError("OLL must be solved before attempting to solve PLL")
-
-    # Check if any of the PLL orientations will match. Rotate the cube in all directions, and also do an UP move in all orientations.
     for _ in range(4):
         for _ in range(4):
             if detect_and_run_pll_case(cube):
-                # Run this to undo any rotations, ensuring that cross is on the bottom.
                 cube.remove_cube_rotations_from_move_history()
                 return
             cube.run_movement(Movement.YAW_CUBE_CW)
@@ -139,7 +132,7 @@ def mix_up_cube(cube: Cube):
         rand_move = random.choice(list(Movement))
         cube.run_movement(rand_move)
 
-
+# lastly all the function calls are done with wrapper.
 def solve_cube(cube: Cube):
     solve_cross(cube)
     solve_f2l(cube)
